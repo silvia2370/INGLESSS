@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Simulator - Tutor de Inglés Interactivo</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#2563eb',
+                            600: '#1d4ed8',
+                            700: '#1e40af',
+                            800: '#1e3a8a',
+                        },
+                        accent: {
+                            500: '#10b981',
+                            600: '#059669',
+                        },
+                        amber: {
+                            500: '#f59e0b',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        
+        .high-contrast-text {
+            color: #0f172a;
+        }
+
+        .chat-bubble-character {
+            background-color: #ffffff;
+            border-left: 6px solid #2563eb;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+
+        .chat-bubble-user {
+            background-color: #eff6ff;
+            border-right: 6px solid #059669;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .audio-btn {
+            transition: all 0.2s ease;
+        }
+        .audio-btn:hover {
+            transform: scale(1.08);
+        }
+        .audio-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Large touch targets & clear contrast */
+        button, select, input {
+            touch-action: manipulation;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between text-lg">
+
+    <!-- Header / Navbar -->
+    <header class="bg-white border-b-2 border-slate-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-brand-600 text-white p-2.5 rounded-xl shadow-md flex items-center justify-center text-2xl">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold text-slate-900 leading-tight">English Coach 60+</h1>
+                    <p class="text-xs md:text-sm text-slate-500 font-medium">Simulador Interactivo de Conversación</p>
+                </div>
+            </div>
+
+            <!-- Stats Badge -->
+            <div class="flex items-center gap-2 md:gap-4">
+                <div class="bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl flex items-center gap-2 text-amber-800">
+                    <i class="fa-solid fa-star text-amber-500 text-xl"></i>
+                    <div>
+                        <span class="text-xs uppercase font-bold text-amber-600 block leading-none">Puntos</span>
+                        <span id="user-score" class="text-lg font-black leading-none">0</span>
+                    </div>
+                </div>
+
+                <div class="bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl flex items-center gap-2 text-emerald-800">
+                    <i class="fa-solid fa-trophy text-emerald-500 text-xl"></i>
+                    <div>
+                        <span class="text-xs uppercase font-bold text-emerald-600 block leading-none">Misiones</span>
+                        <span id="completed-count" class="text-lg font-black leading-none">0/5</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-5xl w-full mx-auto p-4 md:p-6 flex-grow flex flex-col gap-6">
+
+        <!-- Selector de Escenarios -->
+        <section class="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-200">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-compass text-brand-600"></i> Selecciona tu Escenario de Práctica:
+                    </h2>
+                    <p class="text-sm text-slate-600">Elige una situación de la vida real para practicar hablar en inglés.</p>
+                </div>
+                <!-- Speed Control -->
+                <div class="flex items-center gap-2 bg-slate-100 p-2 rounded-xl text-sm self-start md:self-auto">
+                    <i class="fa-solid fa-gauge-high text-slate-600"></i>
+                    <span class="font-semibold text-slate-700">Voz:</span>
+                    <button id="speed-normal" onclick="setSpeechRate(0.9)" class="px-2.5 py-1 rounded-lg bg-brand-600 text-white font-bold shadow-sm text-xs">Normal</button>
+                    <button id="speed-slow" onclick="setSpeechRate(0.65)" class="px-2.5 py-1 rounded-lg bg-white text-slate-700 border border-slate-300 font-bold text-xs">Lenta 🐢</button>
+                </div>
+            </div>
+
+            <!-- Grid de Escenarios -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3" id="scenario-selector">
+                <!-- Javascript will populate scenarios here -->
+            </div>
+        </section>
+
+        <!-- Dynamic Game Arena -->
+        <section id="game-arena" class="flex-grow flex flex-col gap-6">
+
+            <!-- Scenario Banner -->
+            <div class="bg-gradient-to-r from-brand-700 to-brand-500 text-white p-5 rounded-2xl shadow-md flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div id="scenario-icon" class="text-4xl bg-white/10 w-14 h-14 rounded-2xl flex items-center justify-center border border-white/20">
+                        <i class="fa-solid fa-hotel"></i>
+                    </div>
+                    <div>
+                        <span id="scenario-tag" class="text-xs uppercase tracking-widest bg-white/20 px-2.5 py-0.5 rounded-full font-semibold text-brand-100">Escenario 1</span>
+                        <h3 id="scenario-title" class="text-2xl font-bold mt-0.5">At The Hotel</h3>
+                        <p id="scenario-desc" class="text-sm text-brand-100 opacity-90">Haciendo el Check-in y resolviendo dudas con el personal.</p>
+                    </div>
+                </div>
+
+                <button onclick="resetScenario()" class="text-xs md:text-sm bg-white/10 hover:bg-white/20 border border-white/30 text-white px-3 py-2 rounded-xl transition flex items-center gap-2">
+                    <i class="fa-solid fa-rotate-left"></i> <span class="hidden sm:inline">Reiniciar</span>
+                </button>
+            </div>
+
+            <!-- Chat / Simulation Container -->
+            <div class="bg-slate-100/70 p-4 md:p-6 rounded-2xl border border-slate-200 flex flex-col gap-4 min-h-[300px]" id="chat-container">
+                
+                <!-- Character Dialogue Bubble -->
+                <div id="character-card" class="chat-bubble-character p-5 rounded-2xl flex flex-col gap-3">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                        <div class="flex items-center gap-2">
+                            <span id="character-avatar" class="w-8 h-8 rounded-full bg-brand-100 text-brand-700 font-bold flex items-center justify-center text-sm border border-brand-200">
+                                M
+                            </span>
+                            <span id="character-name" class="font-bold text-slate-800">Mark (Hotel Receptionist)</span>
+                        </div>
+                        <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-medium">Nivel Intermedio</span>
+                    </div>
+
+                    <!-- English Text -->
+                    <div class="flex items-start justify-between gap-3">
+                        <p id="character-text" class="text-xl font-medium text-slate-900 leading-relaxed">
+                            "Good evening! Welcome to The Grand Hotel. How can I help you tonight?"
+                        </p>
+                        <button onclick="speakText(document.getElementById('character-text').innerText)" class="audio-btn bg-brand-500 hover:bg-brand-600 text-white p-3 rounded-full shadow-md flex-shrink-0" title="Escuchar pronunciación">
+                            <i class="fa-solid fa-volume-high text-xl"></i>
+                        </button>
+                    </div>
+
+                    <!-- Phonetic / Pronunciation Hint -->
+                    <div class="bg-amber-50/80 border border-amber-200/60 rounded-xl p-3 flex items-start gap-2.5 text-amber-900 text-sm">
+                        <i class="fa-solid fa-lightbulb text-amber-500 text-base mt-0.5"></i>
+                        <div>
+                            <span class="font-bold text-amber-800">Guía de Pronunciación:</span>
+                            <p id="phonetic-hint" class="font-medium text-amber-950">
+                                Good evening! (Gud-ee-vning!) • How can I help you? (Jau can ai jelp yu?)
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Spanish Translation toggle -->
+                    <details class="text-sm text-slate-600 cursor-pointer">
+                        <summary class="font-semibold text-brand-600 hover:underline select-none">
+                            <i class="fa-solid fa-language"></i> Ver Traducción al Español
+                        </summary>
+                        <p id="spanish-translation" class="mt-2 p-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-700 italic">
+                            "¡Buenas noches! Bienvenido al Gran Hotel. ¿Cómo puedo ayudarle esta noche?"
+                        </p>
+                    </details>
+                </div>
+
+                <!-- Feedback area (Appears after user answers) -->
+                <div id="feedback-card" class="hidden bg-emerald-50 border-2 border-emerald-400 p-4 rounded-2xl text-emerald-950 flex flex-col gap-2">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-emerald-800 text-lg flex items-center gap-2">
+                            <i class="fa-solid fa-circle-check text-emerald-600 text-xl"></i> Retroalimentación de la Jugada
+                        </span>
+                        <span id="feedback-score" class="bg-emerald-200 text-emerald-900 px-3 py-1 rounded-full font-black text-sm">
+                            +10 Puntos
+                        </span>
+                    </div>
+                    <p id="feedback-text" class="text-base text-emerald-900 font-medium">
+                        ¡Excelente respuesta! Tu elección fue clara y natural.
+                    </p>
+                    <div id="feedback-tip" class="bg-white/80 p-3 rounded-xl border border-emerald-200 text-sm text-slate-800">
+                        <strong>Tip de Fluidez:</strong> Recuerda unir las palabras en "checking in" (che-kin).
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Player Interaction Panel -->
+            <div class="bg-white p-5 md:p-6 rounded-2xl border-2 border-slate-300 shadow-sm flex flex-col gap-4">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                        <i class="fa-solid fa-comments text-brand-600"></i> Tu Turno: ¿Qué le respondes?
+                    </h3>
+                    <span class="text-xs text-slate-500 font-medium">Elige una opción o escribe en inglés</span>
+                </div>
+
+                <!-- Response Options Grid -->
+                <div id="options-container" class="flex flex-col gap-3">
+                    <!-- Options injected dynamically by JS -->
+                </div>
+
+                <!-- Custom Text Input Option -->
+                <div class="mt-2 border-t border-slate-100 pt-4">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">
+                        <i class="fa-solid fa-keyboard text-slate-400"></i> O escribe tu propia respuesta personalizada:
+                    </label>
+                    <div class="flex gap-2">
+                        <input type="text" id="custom-input" placeholder="Ej: Good evening. I have a reservation under my name..." 
+                            class="flex-grow border-2 border-slate-300 rounded-xl px-4 py-3 text-base text-slate-800 focus:outline-none focus:border-brand-500 transition">
+                        <button onclick="submitCustomAnswer()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-5 py-3 rounded-xl transition flex items-center gap-2 flex-shrink-0">
+                            <i class="fa-solid fa-paper-plane"></i>
+                            <span class="hidden sm:inline">Enviar</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Certificate / Progress Summary Card -->
+        <section class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-2xl font-bold flex-shrink-0">
+                    <i class="fa-solid fa-award"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-slate-900 text-lg">Tu Avance de Aprendizaje</h4>
+                    <p class="text-sm text-slate-600">Cada conversación completada fortalece tu fluidez oral en inglés.</p>
+                </div>
+            </div>
+            <button onclick="showScoreModal()" class="w-full md:w-auto bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold px-5 py-3 rounded-xl transition border border-slate-300 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-chart-line text-brand-600"></i> Ver Mi Resumen de Puntos
+            </button>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-4 mt-6 text-center text-sm text-slate-500">
+        <div class="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2">
+            <p>© 2026 English Simulator - Tutor Adulto Mayor 60+</p>
+            <p class="text-xs text-slate-400">Diseñado con tipografía accesible y pronunciación guiada.</p>
+        </div>
+    </footer>
+
+    <!-- Score & Stats Modal -->
+    <div id="stats-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl border border-slate-100 flex flex-col gap-5">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-trophy text-amber-500"></i> Progreso Diarios
+                </h3>
+                <button onclick="closeScoreModal()" class="text-slate-400 hover:text-slate-600 text-2xl font-bold">&times;</button>
+            </div>
+
+            <div class="text-center py-4 bg-slate-50 rounded-2xl border border-slate-200">
+                <span class="text-xs uppercase tracking-wider font-bold text-slate-500">Puntaje Total Acumulado</span>
+                <div id="modal-total-score" class="text-5xl font-black text-brand-600 my-1">0</div>
+                <p class="text-sm text-slate-600">¡Sigue así! La constancia es la clave.</p>
+            </div>
+
+            <div class="space-y-3">
+                <h4 class="font-bold text-slate-800 text-sm uppercase text-slate-500">Escenarios Completados:</h4>
+                <div id="modal-completed-list" class="space-y-2 text-sm text-slate-700">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <button onclick="closeScoreModal()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-xl transition">
+                ¡Entendido, a seguir practicando!
+            </button>
+        </div>
+    </div>
+
+    <!-- JavaScript Game Logic -->
+    <script>
+        // Global Game State
+        let userScore = 0;
+        let completedScenarios = new Set();
+        let currentSpeechRate = 0.9; // Default rate
+        let currentScenarioKey = 'hotel';
+        let currentStepIndex = 0;
+
+        // Scenarios Database
+        const scenarios = {
+            hotel: {
+                id: 'hotel',
+                title: 'Check-in en el Hotel',
+                tag: 'Escenario 1',
+                icon: 'fa-hotel',
+                description: 'Llegada a la recepción, reserva y atención al cliente.',
+                steps: [
+                    {
+                        character: 'Mark (Recepcionista)',
+                        text: "Good evening! Welcome to The Grand Hotel. How can I help you tonight?",
+                        phonetic: "Good evening! (Gud-ee-vning) • How can I help you? (Jau can ai jelp yu?)",
+                        spanish: "¡Buenas noches! Bienvenido al Gran Hotel. ¿Cómo puedo ayudarle esta noche?",
+                        options: [
+                            {
+                                label: "Opción A (Formal)",
+                                english: "Good evening. I have a reservation under my name. Here is my ID.",
+                                phonetic: "Gud ee-vning. Ai jav a re-ser-vei-shon un-der mai neim.",
+                                feedbackText: "¡Excelente! Una respuesta muy clara, educada y natural.",
+                                tip: "Tip: Al decir 'have a', conéctalo suavemente: 'ja-va'.",
+                                points: 10
+                            },
+                            {
+                                label: "Opción B (Conversacional)",
+                                english: "Hi! I'm checking in. By the way, is it true that this hotel is historic?",
+                                phonetic: "Jai! Aim che-king in. Bai de wei, iz it tru dat dis jo-tel iz jis-to-ric?",
+                                feedbackText: "¡Muy bien! Añadir curiosidad demuestra soltura y confianza.",
+                                tip: "Tip: 'checking in' suena fluido como 'che-king-in'.",
+                                points: 15
+                            }
+                        ]
+                    },
+                    {
+                        character: 'Mark (Recepcionista)',
+                        text: "Yes, it was built in 1920! Here is your key card for room 304. Would you like help with your luggage?",
+                        phonetic: "built in 1920 (bilt in nai-tin-twen-ti) • key card (kii card) • luggage (la-guidsh)",
+                        spanish: "¡Sí, fue construido en 1920! Aquí tiene su tarjeta para la habitación 304. ¿Desea ayuda con sus maletas?",
+                        options: [
+                            {
+                                label: "Opción A (Aceptar ayuda)",
+                                english: "Yes, please! I would appreciate some help with my heavy suitcase.",
+                                phonetic: "Jes, pliiz! Ai wud a-pri-shi-eit som jelp wid mai je-vi sut-keis.",
+                                feedbackText: "¡Respuesta fantástica y muy Cortés!",
+                                tip: "Tip: Puedes decir 'I'd appreciate' (Aid a-pri-shi-eit) para sonar más fluido.",
+                                points: 10
+                            },
+                            {
+                                label: "Opción B (Por tu cuenta)",
+                                english: "No, thank you. I can manage my own bags. Where is the elevator?",
+                                phonetic: "Nou, dank yu. Ai can ma-nidsh mai oun bags. Wer iz di e-le-vei-tor?",
+                                feedbackText: "¡Muy bien resuelto! Directo y práctico.",
+                                tip: "Tip: Pronuncia 'elevator' acentuando la primera 'e': E-le-vei-tor.",
+                                points: 10
+                            }
+                        ]
+                    }
+                ]
+            },
+            coffee: {
+                id: 'coffee',
+                title: 'En la Cafetería',
+                tag: 'Escenario 2',
+                icon: 'fa-mug-hot',
+                description: 'Pedir café, bocadillos y pagar en la caja.',
+                steps: [
+                    {
+                        character: 'Sarah (Barista)',
+                        text: "Good morning! What can I get started for you today?",
+                        phonetic: "Good morning! (Gud mor-ning) • What can I get (Wat can ai get)",
+                        spanish: "¡Buenos días! ¿Qué le puedo preparar el día de hoy?",
+                        options: [
+                            {
+                                label: "Opción A (Pedido estándar)",
+                                english: "Good morning! I'd like a cappuccino and a blueberry muffin, please.",
+                                phonetic: "Gud mor-ning! Aid laik a ca-pu-chi-no and a blu-be-ri ma-fin, pliiz.",
+                                feedbackText: "¡Perfecto! 'I'd like' es la mejor forma de pedir comida o bebida.",
+                                tip: "Tip: 'I'd like' suena suave como 'Aid-laik'.",
+                                points: 10
+                            },
+                            {
+                                label: "Opción B (Preguntar opciones)",
+                                english: "Hi! Do you have milk alternatives like oat milk or almond milk?",
+                                phonetic: "Jai! Du yu jav milk al-ter-na-tivs laik out milk or a-mond milk?",
+                                feedbackText: "¡Excelente vocabulario de cafetería!",
+                                tip: "Tip: La 'l' en 'almond' suele ser casi muda: 'a-mond'.",
+                                points: 15
+                            }
+                        ]
+                    },
+                    {
+                        character: 'Sarah (Barista)',
+                        text: "Yes, we have both! That will be seven dollars. For here or to go?",
+                        phonetic: "seven dollars (se-ven do-lars) • For here or to go? (For jir or tu gou?)",
+                        spanish: "¡Sí, tenemos ambas! Serán siete dólares. ¿Para tomar aquí o para llevar?",
+                        options: [
+                            {
+                                label: "Opción A (Para llevar)",
+                                english: "To go, please. Here is my credit card.",
+                                phonetic: "Tu gou, pliiz. Jir iz mai cre-dit card.",
+                                feedbackText: "¡Muy práctico! En Norteamérica siempre se usa 'To go'.",
+                                tip: "Tip: En Reino Unido dirían 'Takeaway' en vez de 'To go'.",
+                                points: 10
+                            },
+                            {
+                                label: "Opción B (Para tomar aquí)",
+                                english: "For here, please. Is there a table near the window?",
+                                phonetic: "For jir, pliiz. Iz der a tei-bul nir de win-dou?",
+                                feedbackText: "¡Muy buena pregunta para elegir un buen lugar!",
+                                tip: "Tip: Conecta 'Is there a' -> 'Iz-der-a'.",
+                                points: 10
+                            }
+                        ]
+                    }
+                ]
+            },
+            airport: {
+                id: 'airport',
+                title: 'En el Aeropuerto',
+                tag: 'Escenario 3',
+                icon: 'fa-plane-departure',
+                description: 'Paso por facturación de equipaje y tarjeta de embarque.',
+                steps: [
+                    {
+                        character: 'David (Agente de Vuelo)',
+                        text: "Good day! Passport and boarding pass, please. Are you checking any bags today?",
+                        phonetic: "Passport (Pas-port) • Boarding pass (Bor-ding pas) • Checking (Che-king)",
+                        spanish: "¡Buen día! Pasaporte y tarjeta de embarque, por favor. ¿Va a facturar alguna maleta hoy?",
+                        options: [
+                            {
+                                label: "Opción A (Con maleta)",
+                                english: "Yes, I have one suitcase to check in, and this small carry-on bag.",
+                                phonetic: "Jes, ai jav wan sut-keis tu chek in, and dis smol ca-ri-on bag.",
+                                feedbackText: "¡Excelente uso de 'carry-on' (equipaje de mano)!",
+                                tip: "Tip: 'Carry-on' se pronuncia unido: 'ca-ri-on'.",
+                                points: 10
+                            },
+                            {
+                                label: "Opción B (Solo equipaje de mano)",
+                                english: "No, just this carry-on bag. Is the flight on time?",
+                                phonetic: "Nou, dshust dis ca-ri-on bag. Iz de flait on taim?",
+                                feedbackText: "¡Muy buena pregunta sobre el estado del vuelo!",
+                                tip: "Tip: 'On time' significa a tiempo o puntual.",
+                                points: 15
+                            }
+                        ]
+                    }
+                ]
+            },
+            restaurant: {
+                id: 'restaurant',
+                title: 'En el Restaurante',
+                tag: 'Escenario 4',
+                icon: 'fa-utensils',
+                description: 'Pedir mesa, consultar el menú y la cuenta.',
+                steps: [
+                    {
+                        character: 'Elena (Mesera)',
+                        text: "Welcome! A table for how many people tonight?",
+                        phonetic: "Welcome! (Wel-com) • Table for how many? (Tei-bul for jau me-ni?)",
+                        spanish: "¡Bienvenido! ¿Una mesa para cuántas personas esta noche?",
+                        options: [
+                            {
+                                label: "Opción A (Mesa para dos)",
+                                english: "Good evening. A table for two, please. Preferably near the quiet area.",
+                                phonetic: "Gud ee-vning. A tei-bul for tu, pliiz. Pre-fe-ra-bli nir de kwai-et e-ri-a.",
+                                feedbackText: "¡Genial! 'Preferably' es una palabra avanzada y muy útil.",
+                                tip: "Tip: 'Preferably' se pronuncia 'pre-fe-ra-bli'.",
+                                points: 15
+                            },
+                            {
+                                label: "Opción B (Solo una persona)",
+                                english: "Just for one, please. Could I see the menu?",
+                                phonetic: "Dshust for wan, pliiz. Cud ai sii de me-niu?",
+                                feedbackText: "¡Muy bien! 'Could I see...' es súper educado.",
+                                tip: "Tip: 'Could I' suena como 'Cud-ai'.",
+                                points: 10
+                            }
+                        ]
+                    }
+                ]
+            },
+            taxi: {
+                id: 'taxi',
+                title: 'En el Taxi / Uber',
+                tag: 'Escenario 5',
+                icon: 'fa-taxi',
+                description: 'Dar una dirección al conductor y preguntar por la tarifa.',
+                steps: [
+                    {
+                        character: 'John (Conductor)',
+                        text: "Hello! Where can I take you today?",
+                        phonetic: "Hello! (Je-lou) • Where can I take you? (Wer can ai teik yu?)",
+                        spanish: "¡Hola! ¿A dónde le puedo llevar el día de hoy?",
+                        options: [
+                            {
+                                label: "Opción A (Dar dirección)",
+                                english: "Hi! Please take me to Downtown Central Park. How much will it cost?",
+                                phonetic: "Jai! Pliiz teik mi tu Daun-taun Sen-tral Park. Jau mach wil it cost?",
+                                feedbackText: "¡Excelente! Claro y directo con el destino y el costo.",
+                                tip: "Tip: 'How much' se pronuncia unido: 'Jau-mach'.",
+                                points: 10
+                            },
+                            {
+                                label: "Opción B (Preguntar tiempo)",
+                                english: "Hello! To the city museum, please. Is there a lot of traffic right now?",
+                                phonetic: "Je-lou! Tu de ci-ti miu-si-um, pliiz. Iz der a lot of tra-fic rait nau?",
+                                feedbackText: "¡Muy buena frase para entablar conversación con el conductor!",
+                                tip: "Tip: 'traffic' se pronuncia 'tra-fic'.",
+                                points: 15
+                            }
+                        ]
+                    }
+                ]
+            }
+        };
+
+        // Speech Synthesis Setup
+        const synth = window.speechSynthesis;
+
+        function setSpeechRate(rate) {
+            currentSpeechRate = rate;
+            document.getElementById('speed-normal').className = rate === 0.9 ? 
+                'px-2.5 py-1 rounded-lg bg-brand-600 text-white font-bold shadow-sm text-xs' : 
+                'px-2.5 py-1 rounded-lg bg-white text-slate-700 border border-slate-300 font-bold text-xs';
+            
+            document.getElementById('speed-slow').className = rate === 0.65 ? 
+                'px-2.5 py-1 rounded-lg bg-brand-600 text-white font-bold shadow-sm text-xs' : 
+                'px-2.5 py-1 rounded-lg bg-white text-slate-700 border border-slate-300 font-bold text-xs';
+        }
+
+        function speakText(text) {
+            if (!synth) {
+                alert("Tu navegador no soporta reproducción de voz automática.");
+                return;
+            }
+            
+            // Cancel any ongoing speech
+            synth.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = currentSpeechRate;
+            utterance.pitch = 1.0;
+
+            synth.speak(utterance);
+        }
+
+        // Initialize App
+        window.onload = function() {
+            renderScenarioButtons();
+            loadScenario('hotel');
+        };
+
+        // Render Selector Buttons
+        function renderScenarioButtons() {
+            const container = document.getElementById('scenario-selector');
+            container.innerHTML = '';
+
+            Object.keys(scenarios).forEach(key => {
+                const item = scenarios[key];
+                const isSelected = key === currentScenarioKey;
+                const isCompleted = completedScenarios.has(key);
+
+                const btn = document.createElement('button');
+                btn.onclick = () => loadScenario(key);
+                btn.className = `p-3 rounded-xl border-2 text-left flex flex-col justify-between transition-all ${
+                    isSelected 
+                        ? 'border-brand-600 bg-brand-50 text-brand-900 shadow-sm' 
+                        : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'
+                }`;
+
+                btn.innerHTML = `
+                    <div class="flex items-center justify-between mb-2">
+                        <i class="fa-solid ${item.icon} ${isSelected ? 'text-brand-600' : 'text-slate-500'} text-xl"></i>
+                        ${isCompleted ? '<i class="fa-solid fa-circle-check text-emerald-500 text-sm"></i>' : ''}
+                    </div>
+                    <span class="font-bold text-sm leading-tight">${item.title}</span>
+                `;
+
+                container.appendChild(btn);
+            });
+        }
+
+        // Load specific scenario into UI
+        function loadScenario(key) {
+            currentScenarioKey = key;
+            currentStepIndex = 0;
+            renderScenarioButtons();
+
+            const scenario = scenarios[key];
+
+            // Update Banner
+            document.getElementById('scenario-icon').innerHTML = `<i class="fa-solid ${scenario.icon}"></i>`;
+            document.getElementById('scenario-tag').innerText = scenario.tag;
+            document.getElementById('scenario-title').innerText = scenario.title;
+            document.getElementById('scenario-desc').innerText = scenario.description;
+
+            // Hide feedback card on fresh step
+            document.getElementById('feedback-card').classList.add('hidden');
+
+            renderStep();
+        }
+
+        // Render Current Step
+        function renderStep() {
+            const scenario = scenarios[currentScenarioKey];
+            const step = scenario.steps[currentStepIndex];
+
+            // Set Character Info
+            document.getElementById('character-name').innerText = step.character;
+            document.getElementById('character-avatar').innerText = step.character.charAt(0);
+            document.getElementById('character-text').innerText = `"${step.text}"`;
+            document.getElementById('phonetic-hint').innerText = step.phonetic;
+            document.getElementById('spanish-translation').innerText = `"${step.spanish}"`;
+
+            // Render Options
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+
+            step.options.forEach((opt, idx) => {
+                const optBtn = document.createElement('button');
+                optBtn.onclick = () => selectOption(opt);
+                optBtn.className = 'text-left p-4 rounded-xl border-2 border-slate-200 hover:border-brand-500 bg-slate-50 hover:bg-white transition flex flex-col gap-1.5 shadow-xs group';
+
+                optBtn.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold uppercase tracking-wider text-brand-600 bg-brand-100 px-2.5 py-0.5 rounded-md">
+                            ${opt.label}
+                        </span>
+                        <span class="text-xs text-slate-400 group-hover:text-brand-600 font-semibold flex items-center gap-1">
+                            <i class="fa-solid fa-volume-high"></i> Escuchar opción
+                        </span>
+                    </div>
+                    <p class="font-semibold text-slate-900 text-lg group-hover:text-brand-700">"${opt.english}"</p>
+                    <p class="text-xs text-amber-800 font-medium bg-amber-50/60 p-1.5 rounded-md border border-amber-200/50">
+                        <i class="fa-solid fa-microphone text-amber-500"></i> ${opt.phonetic}
+                    </p>
+                `;
+
+                optionsContainer.appendChild(optBtn);
+            });
+
+            // Reset custom input
+            document.getElementById('custom-input').value = '';
+        }
+
+        // Option Selection Handler
+        function selectOption(option) {
+            // Speak user's chosen answer aloud so they hear how it sounds!
+            speakText(option.english);
+
+            // Give score points
+            userScore += option.points;
+            document.getElementById('user-score').innerText = userScore;
+
+            // Show Feedback
+            const feedbackCard = document.getElementById('feedback-card');
+            feedbackCard.classList.remove('hidden');
+            document.getElementById('feedback-text').innerText = option.feedbackText;
+            document.getElementById('feedback-tip').innerHTML = `<strong>Tip de Pronunciación:</strong> ${option.tip}`;
+            document.getElementById('feedback-score').innerText = `+${option.points} Puntos`;
+
+            // Mark completed scenario
+            completedScenarios.add(currentScenarioKey);
+            document.getElementById('completed-count').innerText = `${completedScenarios.size}/5`;
+            renderScenarioButtons();
+
+            // Auto scroll down to feedback smoothly
+            feedbackCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Custom Answer Submit
+        function submitCustomAnswer() {
+            const inputVal = document.getElementById('custom-input').value.trim();
+            if (!inputVal) {
+                alert("Por favor escribe una frase en inglés antes de enviar.");
+                return;
+            }
+
+            // Speak custom input
+            speakText(inputVal);
+
+            // Award points for effort
+            userScore += 15;
+            document.getElementById('user-score').innerText = userScore;
+
+            // Show Feedback
+            const feedbackCard = document.getElementById('feedback-card');
+            feedbackCard.classList.remove('hidden');
+            document.getElementById('feedback-text').innerText = `¡Excelente iniciativa al crear tu propia respuesta: "${inputVal}"!`;
+            document.getElementById('feedback-tip').innerHTML = `<strong>Tip de Fluidez:</strong> Sigue practicando tus propias oraciones para ganar independencia oral.`;
+            document.getElementById('feedback-score').innerText = `+15 Puntos Creativos`;
+
+            completedScenarios.add(currentScenarioKey);
+            document.getElementById('completed-count').innerText = `${completedScenarios.size}/5`;
+            renderScenarioButtons();
+
+            document.getElementById('custom-input').value = '';
+        }
+
+        function resetScenario() {
+            currentStepIndex = 0;
+            document.getElementById('feedback-card').classList.add('hidden');
+            renderStep();
+        }
+
+        // Modal Controls
+        function showScoreModal() {
+            document.getElementById('modal-total-score').innerText = userScore;
+            
+            const listContainer = document.getElementById('modal-completed-list');
+            listContainer.innerHTML = '';
+
+            if (completedScenarios.size === 0) {
+                listContainer.innerHTML = '<p class="italic text-slate-500">Aún no has completado ningún escenario. ¡Comienza uno hoy!</p>';
+            } else {
+                completedScenarios.forEach(key => {
+                    const sc = scenarios[key];
+                    const item = document.createElement('div');
+                    item.className = 'flex items-center justify-between p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-900 font-semibold';
+                    item.innerHTML = `
+                        <span class="flex items-center gap-2">
+                            <i class="fa-solid ${sc.icon} text-emerald-600"></i> ${sc.title}
+                        </span>
+                        <span class="text-xs bg-emerald-200 text-emerald-800 px-2 py-0.5 rounded-md font-bold">Completado</span>
+                    `;
+                    listContainer.appendChild(item);
+                });
+            }
+
+            document.getElementById('stats-modal').classList.remove('hidden');
+        }
+
+        function closeScoreModal() {
+            document.getElementById('stats-modal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
